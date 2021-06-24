@@ -2,11 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace SabiAmMovies.WebAPI.Controllers
 {
     [Route("api/[controller]")]
+    [AllowAnonymous]
     public class ValuesController : ControllerBase
     {
         // GET api/values

@@ -9,4 +9,10 @@ namespace SabiAmMovies.WebAPI.Domain.Constants
         public static string Admin = "AppAdmin";
         public static string User = "AppUser";
     }
+    public static class AuthorizedUserTypes
+    {
+        public const string Admin = "AuthorizedAdmin";
+        public const string Users = "AuthorizedUsers";
+        public const string UserAndAdmin = "AuthorizedUserAdmin";
+    }
 }

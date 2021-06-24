@@ -7,10 +7,14 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using SabiAmMovies.WebAPI.Domain.Constants;
+using SabiAmMovies.WebAPI.Extensions;
+using SabiAmMovies.WebAPI.Infrastructure.Persistence;
 
 namespace SabiAmMovies.WebAPI
 {
@@ -26,6 +30,47 @@ namespace SabiAmMovies.WebAPI
         // This method gets called by the runtime. Use this method to add services to the container
         public void ConfigureServices(IServiceCollection services)
         {
+            var jwtSecret = Configuration["JwtSettings:Secret"];
+
+            var connstr = Configuration.GetConnectionString("sabi.dev");
+            //services.AddDbContext<TrackerContext>(options =>
+            //    options.UseMySql(connstr, b => b.MigrationsAssembly("Bestaf.FlickPaymentGateway.WebApi.Infrastructure"))
+            //);
+            var serverVersion = new MySqlServerVersion(new Version(8, 0, 21));
+
+            // Replace 'YourDbContext' with the name of your own DbContext derived class.
+            services.AddDbContext<DataContext>(
+                dbContextOptions => dbContextOptions
+                    .UseMySql(connstr, serverVersion, b => {
+                        b.MigrationsAssembly("SabiAmMovies.WebAPI.Infrastructure");
+                        b.EnableRetryOnFailure();
+                    })
+                    .EnableSensitiveDataLogging() // <-- These two calls are optional but help
+                    .EnableDetailedErrors()       // <-- with debugging (remove for production).
+            );
+
+            services.AddAppAuthentication(jwtSecret);
+            services.AddAuthorization(opt =>
+            {
+                //Just the admin
+                opt.AddPolicy(AuthorizedUserTypes.Admin, policy =>
+
+                policy.RequireRole(UserConstants.Admin));
+
+                // Just the user
+                opt.AddPolicy(AuthorizedUserTypes.Users, policy =>
+
+                policy.RequireRole(UserConstants.User));
+                // user and admin
+                opt.AddPolicy(AuthorizedUserTypes.UserAndAdmin, policy =>
+
+                policy.RequireRole(UserConstants.User, UserConstants.Admin));
+
+
+            });
+
+            services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+            services.AddHttpContextAccessor();
             services.AddControllers();
         }
 
